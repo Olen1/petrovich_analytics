@@ -1,0 +1,200 @@
+
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Петрович — AI-агент автопарка</title>
+    <link rel="icon" href="/ai-petrovich/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+<header>
+    <h1>🤖 Петрович</h1>
+    <p class="tagline">ИИ-агент управления автопарком · <span id="vehicleCount">8</span> ТС в базе</p>
+    <nav>
+        <a href="#upload">📤 Загрузка</a>
+        <a href="#analytics">📊 Аналитика</a>
+        <a href="#anomalies">🚨 Аномалии</a>
+        <a href="#chat">💬 Чат</a>
+        <a href="#schedule">⏰ Расписание</a>
+        <a href="docs" target="_blank" class="muted">Swagger</a>
+    </nav>
+</header>
+<main>
+
+    <!-- Upload -->
+    <section id="upload">
+        <h2>📤 Источник данных</h2>
+        <div class="tabs" id="sourceTabs">
+            <button class="tab active" data-src="file">📄 Файл (xlsx/csv)</button>
+            <button class="tab" data-src="autograph">🔄 AutoGRAPH</button>
+        </div>
+
+        <!-- File source -->
+        <div id="sourceFile" class="source-pane">
+            <p class="muted">Загрузите xlsx-выгрузку из системы мониторинга (формат Skaut/Omnicom) или CSV (колонки: ts,lon,lat,speed,fuel_total,eng_hours,move_state).</p>
+            <div class="upload-row">
+                <input type="file" id="xlsxFile" accept=".xlsx,.csv">
+                <button id="uploadBtn" class="primary">Загрузить</button>
+                <button id="demoBtn" class="ghost">📦 Загрузить demo</button>
+            </div>
+            <progress id="uploadProgress" value="0" max="100" hidden></progress>
+            <div id="uploadResult" class="result"></div>
+        </div>
+
+        <!-- AutoGRAPH source -->
+        <div id="sourceAutograph" class="source-pane" hidden>
+            <p class="muted">Выгрузка телеметрии из схемы AutoGRAPH (Technokom).</p>
+            <div class="toolbar">
+                <label>Схема:
+                    <select id="autographSchema">
+                        <option value="">— загрузить схемы —</option>
+                    </select>
+                </label>
+                <label>Дней назад:
+                    <input type="number" id="autographDays" value="1" min="1" max="90" style="width: 60px;">
+                </label>
+                <button id="autographSyncBtn" class="ghost">🔄 Синхронизировать</button>
+                <button id="autographPreviewBtn" class="ghost">👁 Превью</button>
+                <span class="muted" id="autographResult"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics -->
+    <section id="analytics">
+        <h2>📊 Аналитика</h2>
+        <div class="toolbar">
+            <label>ТС: <select id="vehicleSelect"></select></label>
+            <button id="recomputeBtn" class="ghost">⟳ Пересчитать агрегаты</button>
+            <a id="csvPointsLink" class="btn ghost" href="#" download>⬇ CSV по точкам</a>
+            <a id="csvDailyLink" class="btn ghost" href="#" download>⬇ CSV по дням</a>
+        </div>
+        <div class="charts">
+            <div class="card">
+                <h3>Топливо + моточасы (сырые точки)</h3>
+                <div class="toolbar">
+                    <label>Диапазон:
+                        <select id="pointsRange">
+                            <option value="12h">12 ч</option>
+                            <option value="24h" selected>24 ч</option>
+                            <option value="3d">3 дня</option>
+                            <option value="7d">7 дней</option>
+                            <option value="all">Всё</option>
+                        </select>
+                    </label>
+                    <button id="prevPoints" class="ghost">←</button>
+                    <span id="pointsPager">—</span>
+                    <button id="nextPoints" class="ghost">→</button>
+                </div>
+                <canvas id="fuelChart" height="180"></canvas>
+            </div>
+            <div class="card">
+                <h3>Дневные агрегаты (факт vs прогноз)</h3>
+                <canvas id="dailyChart" height="180"></canvas>
+            </div>
+        </div>
+        <div class="card" id="trackCard">
+            <h3>🗺 Карта пути ТС (2ГИС)</h3>
+            <div class="toolbar">
+                <label>Дата от: <input type="date" id="trackFrom"></label>
+                <label>Дата до: <input type="date" id="trackTo"></label>
+                <label>Лимит: <input type="number" id="trackLimit" value="2000" min="100" max="20000" style="width:90px"></label>
+                <button id="loadTrackBtn" class="primary">🗺 Загрузить трек</button>
+                <button id="mapZoomInBtn" class="ghost" title="Приблизить">+</button>
+                <button id="mapZoomOutBtn" class="ghost" title="Отдалить">−</button>
+                <span class="muted" id="trackInfo"></span>
+            </div>
+            <div id="trackMap" style="height:400px; border-radius:6px;"></div>
+        </div>
+        <div class="card">
+            <h3>Дневные данные</h3>
+            <table id="dailyTable">
+                <thead>
+                <tr><th>Дата</th><th>Пробег, км</th><th>Расход, л</th><th>Прогноз, л</th><th>Отклонение %</th><th>ХХ, ч</th><th>Работа, ч</th><th>л/моточас</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Anomalies -->
+    <section id="anomalies">
+        <h2>🚨 Аномалии</h2>
+        <div class="toolbar">
+            <button id="detectBtn" class="primary">🔍 Запустить детектор</button>
+            <label>Статус:
+                <select id="anomaliesStatus">
+                    <option value="new" selected>Новые</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="dismissed">Dismissed</option>
+                </select>
+            </label>
+            <span class="muted" id="lastDetect"></span>
+        </div>
+        <div class="tabs" id="severityTabs">
+            <button class="tab active" data-sev="all">Все <span class="badge" id="cntAll">0</span></button>
+            <button class="tab" data-sev="high">High <span class="badge high" id="cntHigh">0</span></button>
+            <button class="tab" data-sev="med">Med <span class="badge med" id="cntMed">0</span></button>
+            <button class="tab" data-sev="low">Low <span class="badge low" id="cntLow">0</span></button>
+        </div>
+        <div id="anomaliesList"></div>
+        <div class="pagination">
+            <button id="prevAnomalies" class="ghost">←</button>
+            <span id="anomaliesPager">—</span>
+            <button id="nextAnomalies" class="ghost">→</button>
+        </div>
+    </section>
+
+    <!-- Chat -->
+    <section id="chat">
+        <h2>💬 ИИ-помощник «Петрович»</h2>
+        <p class="muted">Спрашивайте на естественном языке. Ответ стримится по мере генерации LLM.</p>
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-input">
+            <textarea id="chatInput" rows="2" placeholder="Например: «Покажи расход топлива за всё время»"></textarea>
+            <div class="chat-controls">
+                <label><input type="checkbox" id="useLlm" checked> Использовать LLM</label>
+                <button id="chatSend" class="primary">Спросить</button>
+                <button id="chatClear" class="ghost">Очистить</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Schedule -->
+    <section id="schedule">
+        <h2>⏰ Расписание утреннего доклада</h2>
+        <p class="muted">Подписчики получают доклад в Telegram в указанное время. Cron на сервере: <code>09:30 (Asia/Yekaterinburg)</code>.</p>
+        <form id="subscriberForm" class="form-row">
+            <label>Chat ID: <input type="number" id="subChatId" required placeholder="123456789"></label>
+            <label>Имя: <input type="text" id="subName" placeholder="опц."></label>
+            <label>Время (HH:MM): <input type="text" id="subTime" value="09:30" pattern="^([01]\d|2[0-3]):[0-5]\d$" required></label>
+            <label class="chk"><input type="checkbox" id="subActive" checked> Активен</label>
+            <button type="submit" class="primary">Сохранить</button>
+        </form>
+        <div class="toolbar">
+            <button id="sendNowBtn" class="ghost">📨 Отправить сейчас всем</button>
+            <label>Chat ID:
+                <input type="number" id="sendToChatId" placeholder="123456789" style="width: 140px;">
+            </label>
+            <button id="sendToBtn" class="ghost">📨 Отправить одному</button>
+            <button id="previewReportBtn" class="ghost">👁 Превью отчёта</button>
+            <span class="muted" id="sendResult"></span>
+        </div>
+        <table id="subscribersTable">
+            <thead><tr><th>#</th><th>Chat ID</th><th>Имя</th><th>Username</th><th>Время</th><th>Активен</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </section>
+
+</main>
+<footer>
+    <p class="muted">Петрович · 8 ТС · PostgreSQL · <a href="api/v1/health">health</a></p>
+</footer>
+
+<script>window.DG=window.DG||{};window.DG.customConfig={key:"8399d24e-4ae9-4c69-a739-aec8516af7a0"};</script>
+<script src="static/vendor/chart.umd.min.js"></script>
+<script src="static/vendor/2gis-loader.js"></script>
+<script src="static/app.js"></script>
+</body>
+</html>
