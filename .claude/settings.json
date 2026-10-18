@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit(doc/**)",
+      "Write(doc/**)",
+      "Bash(npm run check:*)",
+      "Bash(npm run doctor)",
+      "Bash(node scripts/*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)"
+    ],
+    "ask": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)",
+      "Bash(rm:*)",
+      "Edit(AGENTS.md)",
+      "Edit(.claude/**)",
+      "Write(.claude/**)"
+    ],
+    "deny": [
+      "Read(.claude/settings.local.json)",
+      "Read(**/.env*)",
+      "Edit(doc/autograph_api_reference.md)",
+      "Edit(doc/MVP.html)",
+      "Edit(doc/rawdata_1truck_5days.xlsx)",
+      "Edit(doc/ИИ_агент_Петрович_управляем_автопарком_v_1_1.txt)",
+      "Write(doc/ИИ_агент_Петрович_управляем_автопарком_v_1_1.txt)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-write.mjs\"", "timeout": 10 }]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.mjs\"", "timeout": 10 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/after-edit.mjs\"", "timeout": 10 }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/on-stop.mjs\"", "timeout": 60 }]
+      }
+    ]
+  }
+}
