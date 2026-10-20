@@ -15,6 +15,9 @@ if (p.startsWith("..")) process.exit(0);
 if (PROTECTED.includes(p)) {
   block(`${p} — исходный материал, его не правят. Нужна текстовая копия или выжимка — создайте отдельный документ в doc/ (см. AGENTS.md, «Границы»).`);
 }
+if (/^slides\/.+\.html$/.test(p)) {
+  block(`${p} собирается из ${p.replace(/\.html$/, ".json")} — правьте JSON и запустите npm run slides -- ${p.replace(/\.html$/, ".json")}. Шаблон — scripts/slides/template.html.`);
+}
 if (p.startsWith(".claude/settings.local.json") || /(^|\/)\.env/.test(p)) {
   block(`${p} — личные настройки или секреты; агент их не пишет.`);
 }

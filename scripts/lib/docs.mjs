@@ -14,7 +14,7 @@ export const PROTECTED = [
 ];
 
 // Куда агенту можно писать. Всё остальное — только по просьбе пользователя.
-export const WRITABLE = [/^doc\//, /^\.claude\//, /^scripts\//, /^[^/]+\.md$/, /^package\.json$/, /^\.gitignore$/];
+export const WRITABLE = [/^doc\//, /^slides\//, /^\.claude\//, /^scripts\//, /^[^/]+\.md$/, /^package\.json$/, /^\.gitignore$/];
 
 // Документы, у которых не проверяется шапка: выгрузки и оригиналы.
 const NO_HEADER = new Set(["doc/autograph_api_reference.md"]);

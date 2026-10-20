@@ -1,10 +1,13 @@
 {
   "name": "petrovich-analytics",
   "private": true,
-  "description": "Продуктовая аналитика «Петровича»: проверки документов и обвязки",
+  "description": "Продуктовая аналитика «Петровича»: проверки документов, слайды и обвязка",
   "type": "module",
   "scripts": {
     "check": "node scripts/check.mjs",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "slop": "node scripts/slop.mjs",
+    "render": "node scripts/render.mjs",
+    "slides": "node scripts/slides.mjs"
   }
 }

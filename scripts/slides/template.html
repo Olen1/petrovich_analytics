@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Слайды</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+  <style>
+    /* Палитра и шрифты — из темы приложения «Петрович» (Theme.kt), светлая тема */
+    :root {
+      --bg: #f4f5f7; --surface: #ffffff; --surface2: #ebeef1; --line: #e0e4e8;
+      --ink: #1b1f24; --muted: #5b616b; --faint: #8a9099;
+      --accent: #1d3f66; --on-accent: #ffffff; --accent-soft: #e3eaf3;
+      --high: #b42318; --high-soft: #fdecea; --med: #8a4b00; --med-soft: #fff4d6;
+      --low: #3e5f85; --low-soft: #e3eaf3; --ok: #067647; --ok-soft: #e6f4ec;
+      --ui: "Onest", "Segoe UI", Arial, sans-serif;
+      --display: "Manrope", "Onest", "Segoe UI", Arial, sans-serif;
+      --W: 1280px; --H: 720px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #d9dde2; overflow: hidden; }
+    body { font-family: var(--ui); color: var(--ink); display: grid; place-items: center; }
+    h1, h2, p, ul { margin: 0; }
+
+    .stage { width: var(--W); height: var(--H); position: relative; transform-origin: center; }
+    .slide {
+      position: absolute; inset: 0; background: var(--bg); padding: 56px 72px 64px;
+      display: grid; grid-template-rows: auto 1fr; gap: 28px; overflow: hidden;
+      visibility: hidden; opacity: 0; transition: opacity .25s ease;
+      border-radius: 6px; box-shadow: 0 10px 40px rgba(20, 30, 45, .18);
+    }
+    .slide.on { visibility: visible; opacity: 1; }
+    .slide.t-title, .slide.t-section { background: var(--accent); color: var(--on-accent); align-content: center; grid-template-rows: auto; }
+
+    .top { display: flex; justify-content: space-between; align-items: center; color: var(--faint); font-size: 15px; font-weight: 600; }
+    .top .brand { display: flex; gap: 10px; align-items: center; color: var(--accent); font-family: var(--display); font-weight: 800; letter-spacing: .02em; }
+    .top .brand i { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); }
+    h2 { font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1.12; letter-spacing: -.01em; max-width: 26ch; }
+    .content { display: grid; gap: 22px; align-content: start; min-height: 0; overflow: hidden; }
+    .lead { font-size: 22px; line-height: 1.45; color: var(--muted); max-width: 60ch; }
+    .takeaway {
+      align-self: end; display: flex; gap: 12px; align-items: baseline; background: var(--surface);
+      border-left: 5px solid var(--accent); border-radius: 10px; padding: 16px 22px; font-size: 21px; line-height: 1.35; font-weight: 600;
+    }
+    .takeaway::before { content: "→"; color: var(--accent); font-weight: 800; }
+
+    /* Титул и раздел */
+    .t-title h1 { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1.05; max-width: 20ch; }
+    .t-title .sub, .t-section .sub { font-size: 26px; line-height: 1.4; opacity: .82; margin-top: 22px; max-width: 46ch; }
+    .t-title .meta { position: absolute; left: 72px; bottom: 52px; font-size: 18px; opacity: .7; }
+    .t-section .num { font-family: var(--display); font-size: 22px; font-weight: 700; opacity: .7; margin-bottom: 14px; }
+    .t-section h1 { font-family: var(--display); font-weight: 800; font-size: 56px; line-height: 1.08; max-width: 22ch; }
+
+    /* Список */
+    .bullets { list-style: none; padding: 0; display: grid; gap: 16px; }
+    .bullets li { display: grid; grid-template-columns: 30px 1fr; gap: 14px; font-size: 24px; line-height: 1.38; }
+    .bullets li::before { content: ""; width: 12px; height: 12px; margin-top: 11px; border-radius: 4px; background: var(--accent); }
+
+    /* Карточки и метрики */
+    .grid { display: grid; gap: 18px; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 10px; align-content: start; }
+    .card b { font-family: var(--display); font-size: 23px; line-height: 1.2; }
+    .card span { color: var(--muted); font-size: 19px; line-height: 1.42; }
+    .metric { background: var(--surface); border-radius: 14px; padding: 26px 24px; display: grid; gap: 8px; border: 1px solid var(--line); }
+    .metric b { font-family: var(--display); font-size: 52px; line-height: 1; color: var(--accent); }
+    .metric span { color: var(--muted); font-size: 19px; line-height: 1.38; }
+
+    /* Таблица */
+    table { border-collapse: separate; border-spacing: 0; width: 100%; background: var(--surface); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); font-size: 18px; }
+    th { text-align: left; background: var(--surface2); color: var(--muted); font-weight: 600; padding: 12px 16px; font-size: 16px; }
+    td { padding: 12px 16px; border-top: 1px solid var(--line); line-height: 1.35; vertical-align: top; }
+
+    /* Утверждение */
+    .statement-text { font-family: var(--display); font-weight: 800; font-size: 46px; line-height: 1.15; color: var(--accent); max-width: 28ch; }
+
+    /* Диаграмма */
+    .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; place-items: center; min-height: 0; overflow: hidden; }
+    .diagram svg { width: 100%; max-width: 100% !important; max-height: 440px; height: auto; }
+    .diagram pre { font-size: 14px; color: var(--muted); white-space: pre-wrap; margin: 0; }
+    .caption { color: var(--muted); font-size: 18px; }
+
+    /* Метки серьёзности: [[high:текст]], [[med:…]], [[low:…]], [[ok:…]] */
+    .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .82em; font-weight: 600; }
+    .tag.high { color: var(--high); background: var(--high-soft); } .tag.med { color: var(--med); background: var(--med-soft); }
+    .tag.low { color: var(--low); background: var(--low-soft); } .tag.ok { color: var(--ok); background: var(--ok-soft); }
+
+    .count { position: absolute; right: 72px; bottom: 26px; color: var(--faint); font-size: 14px; font-weight: 600; }
+    .t-title .count, .t-section .count { color: rgba(255, 255, 255, .55); }
+
+    @media print {
+      @page { size: 1280px 720px; margin: 0; }
+      html, body { overflow: visible; background: none; display: block; height: auto; }
+      .stage { transform: none !important; width: auto; height: auto; }
+      .slide { position: relative; visibility: visible; opacity: 1; width: 1280px; height: 720px; page-break-after: always; border-radius: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage"></div>
+  <pre id="check-result" hidden></pre>
+  <script>
+    const DECK = /*__DECK__*/null;
+
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    // Минимальная разметка в тексте: **жирный**, [[high:метка]]
+    // Пробел внутри числа и перед единицей — неразрывный: «10 000 км», «15 мин» не переносятся
+    const md = (s) => esc(s).replace(/(\d) (?=\d{3}(?!\d))/g, "$1&nbsp;").replace(/(\d) (?=(₽|%|км|л|мин|ч|с|тыс|млн)(?![\p{L}]))/gu, "$1&nbsp;").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\[\[(high|med|low|ok):(.+?)\]\]/g, '<span class="tag $1">$2</span>');
+    const takeaway = (t) => (t ? `<div class="takeaway">${md(t)}</div>` : "");
+
+    function body(s) {
+      switch (s.type) {
+        case "title": return `<div><h1>${md(s.title)}</h1>${s.subtitle ? `<p class="sub">${md(s.subtitle)}</p>` : ""}</div>${s.meta ? `<p class="meta">${md(s.meta)}</p>` : ""}`;
+        case "section": return `<div>${s.num ? `<p class="num">${md(s.num)}</p>` : ""}<h1>${md(s.title)}</h1>${s.lead ? `<p class="sub">${md(s.lead)}</p>` : ""}</div>`;
+        case "bullets": return `<ul class="bullets">${s.items.map((i) => `<li><span>${md(i)}</span></li>`).join("")}</ul>${takeaway(s.takeaway)}`;
+        case "cards": return `<div class="grid" style="--n:${s.items.length}">${s.items.map(([h, t]) => `<div class="card"><b>${md(h)}</b>${t ? `<span>${md(t)}</span>` : ""}</div>`).join("")}</div>${takeaway(s.takeaway)}`;
+        case "metrics": return `<div class="grid" style="--n:${s.items.length}">${s.items.map(([v, l]) => `<div class="metric"><b>${md(v)}</b><span>${md(l)}</span></div>`).join("")}</div>${takeaway(s.takeaway)}`;
+        case "table": return `<table><thead><tr>${s.head.map((h) => `<th>${md(h)}</th>`).join("")}</tr></thead><tbody>${s.rows.map((r) => `<tr>${r.map((c) => `<td>${md(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>${takeaway(s.takeaway)}`;
+        case "statement": return `<p class="statement-text">${md(s.text)}</p>${s.lead ? `<p class="lead">${md(s.lead)}</p>` : ""}${takeaway(s.takeaway)}`;
+        case "diagram": return `<div class="diagram"><pre class="mermaid-src">${esc(s.mermaid)}</pre></div>${s.caption ? `<p class="caption">${md(s.caption)}</p>` : ""}`;
+        default: return `<p class="lead">${md(s.text || "")}</p>`;
+      }
+    }
+
+    const stage = document.getElementById("stage");
+    document.title = DECK.title;
+    stage.innerHTML = DECK.slides.map((s, i) => {
+      const dark = s.type === "title" || s.type === "section";
+      const head = dark ? "" : `<div class="top"><span class="brand"><i></i>${esc(DECK.brand || "Петрович")}</span><span>${esc(DECK.title)}</span></div>`;
+      const inner = dark ? body(s) : `<div class="content"><h2>${md(s.title)}</h2>${body(s)}</div>`;
+      return `<section class="slide t-${s.type}" data-i="${i}">${head}${inner}<span class="count">${i + 1} / ${DECK.slides.length}</span></section>`;
+    }).join("");
+    const slides = [...stage.querySelectorAll(".slide")];
+
+    async function renderDiagrams() {
+      const errors = [];
+      if (!window.mermaid) return ["mermaid не загрузился — нет сети"];
+      mermaid.initialize({
+        startOnLoad: false, securityLevel: "strict", theme: "base",
+        themeVariables: { fontFamily: "Onest, Segoe UI, Arial", fontSize: "18px", primaryColor: "#e3eaf3", primaryBorderColor: "#1d3f66", primaryTextColor: "#1b1f24", lineColor: "#5b616b", secondaryColor: "#fff4d6", tertiaryColor: "#ffffff" },
+      });
+      for (const [n, el] of document.querySelectorAll(".mermaid-src").entries()) {
+        const code = el.textContent;
+        try { const { svg } = await mermaid.render(`dg${n}`, code); el.outerHTML = svg; }
+        catch (e) { errors.push(`слайд ${Number(el.closest(".slide").dataset.i) + 1}: ${String(e.message || e).split("\n")[0]}`); }
+      }
+      return errors;
+    }
+
+    let cur = 0;
+    function go(i) {
+      cur = Math.max(0, Math.min(slides.length - 1, i));
+      slides.forEach((s, k) => s.classList.toggle("on", k === cur));
+      history.replaceState(null, "", `#${cur + 1}`);
+    }
+    function fit() { stage.style.transform = `scale(${Math.min(innerWidth / 1280, innerHeight / 720) * 0.96})`; }
+
+    // Режим проверки (?check): вылезающий за слайд текст и ошибки диаграмм — в RESULT для `npm run slides`.
+    function checkLayout() {
+      const problems = [];
+      slides.forEach((s, i) => {
+        s.classList.add("on");
+        const box = s.getBoundingClientRect();
+        const scale = box.width / 1280;
+        for (const el of s.querySelectorAll(".content, .content > *, .card, .metric, table, .diagram, h1, .sub")) {
+          const r = el.getBoundingClientRect();
+          if (r.bottom > box.bottom - 20 * scale + 1 || r.right > box.right + 1) problems.push(`слайд ${i + 1}: «${el.textContent.trim().slice(0, 40)}…» выходит за край`);
+          if (el.scrollHeight > el.clientHeight + 2 && getComputedStyle(el).overflow === "hidden") problems.push(`слайд ${i + 1}: содержимое обрезано (${el.className || el.tagName.toLowerCase()})`);
+        }
+        s.classList.remove("on");
+      });
+      return [...new Set(problems)];
+    }
+
+    (async () => {
+      // Сначала шрифты: Mermaid меряет подписи по текущему шрифту, иначе текст в узлах обрезается.
+      if (document.fonts) {
+        await Promise.all(["400 18px Onest", "600 18px Onest", "800 40px Manrope"].map((f) => document.fonts.load(f).catch(() => {})));
+        await document.fonts.ready;
+      }
+      const diagramErrors = await renderDiagrams();
+      const checking = location.search.includes("check");
+      if (checking) {
+        stage.style.transform = "none";
+        const out = document.getElementById("check-result");
+        out.textContent = "RESULT:" + JSON.stringify({ slides: slides.length, overflow: checkLayout(), diagrams: diagramErrors, fonts: document.fonts ? document.fonts.check("16px Onest") : false });
+        out.hidden = false;
+      }
+      fit();
+      go((parseInt(location.hash.slice(1), 10) || 1) - 1);
+    })();
+
+    addEventListener("resize", fit);
+    addEventListener("keydown", (e) => {
+      if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+      if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+      if (e.key === "Home") go(0);
+      if (e.key === "End") go(slides.length - 1);
+    });
+    stage.addEventListener("click", (e) => (e.clientX > innerWidth / 3 ? go(cur + 1) : go(cur - 1)));
+  </script>
+</body>
+</html>

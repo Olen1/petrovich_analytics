@@ -11,7 +11,7 @@ if (input.stop_hook_active) process.exit(0);
 let changed = [];
 try {
   const out = execFileSync("git", ["status", "--porcelain", "-z", "--untracked-files=all"], { cwd: ROOT }).toString();
-  changed = out.split("\0").filter(Boolean).map((l) => l.slice(3)).filter((f) => f.startsWith("doc/") || /^(AGENTS|CLAUDE)\.md$/.test(f));
+  changed = out.split("\0").filter(Boolean).map((l) => l.slice(3)).filter((f) => f.startsWith("doc/") || f.startsWith("slides/") || /^(AGENTS|CLAUDE)\.md$/.test(f));
 } catch {
   process.exit(0);
 }
