@@ -8,6 +8,7 @@
     "doctor": "node scripts/doctor.mjs",
     "slop": "node scripts/slop.mjs",
     "render": "node scripts/render.mjs",
-    "slides": "node scripts/slides.mjs"
+    "slides": "node scripts/slides.mjs",
+    "sprint-deck": "node scripts/sprint-deck.mjs"
   }
 }

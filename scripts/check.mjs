@@ -7,6 +7,7 @@ import { ROOT, listDocs, checkHeader, findSecrets, findRefs, resolveRef, rel, PR
 import { scanSlop, SOFT_LIMIT } from "./lib/slop.mjs";
 import { extractMermaid, lintMermaid } from "./lib/mermaid.mjs";
 import { validateDeck, deckText } from "./slides.mjs";
+import { isSprintDeck, validateSprintDeck, sprintDeckText, builtFrom, sourceHash } from "./sprint-deck.mjs";
 
 const args = process.argv.slice(2).map(rel);
 const all = listDocs();
@@ -75,9 +76,10 @@ const slidesDir = path.join(ROOT, "slides");
 if (fs.existsSync(slidesDir)) {
   for (const name of fs.readdirSync(slidesDir).filter((n) => n.endsWith(".json"))) {
     const f = `slides/${name}`;
-    let deck;
-    try { deck = JSON.parse(read(f)); } catch (e) { errors.push(`${f}: не JSON — ${e.message}`); continue; }
-    validateDeck(deck).forEach((m) => errors.push(`${f}: ${m}`));
+    let raw, deck;
+    try { raw = read(f); deck = JSON.parse(raw); } catch (e) { errors.push(`${f}: не JSON — ${e.message}`); continue; }
+    const pptx = isSprintDeck(deck);
+    (pptx ? validateSprintDeck(deck) : validateDeck(deck)).forEach((m) => errors.push(`${f}: ${m}`));
     // Источник обновился — слайды надо сверить с ним и поднять версию в sources.
     for (const s of deck.sources || []) {
       const m = String(s).match(/^(\S+\.md)\s+v(\d+\.\d+)/);
@@ -86,7 +88,13 @@ if (fs.existsSync(slidesDir)) {
       if (!found) errors.push(`${f}: источника ${m[1]} нет`);
       else if (versions[found] && versions[found] !== m[2]) errors.push(`${f}: собрано по ${m[1]} v${m[2]}, а документ уже v${versions[found]} — сверьте слайды с изменениями`);
     }
-    for (const h of scanSlop(deckText(deck)).hits.filter((h) => h.level === "hard")) errors.push(`${f}: слайд ${h.line}: нейрослоп [${h.id}] «${h.text.trim()}»`);
+    for (const h of scanSlop(pptx ? sprintDeckText(deck) : deckText(deck)).hits.filter((h) => h.level === "hard")) errors.push(`${f}: слайд ${h.line}: нейрослоп [${h.id}] «${h.text.trim()}»`);
+    if (pptx) {
+      // Отчёт по спринту: .pptx собран из текущего JSON (хеш источника записан в свойствах файла).
+      const out = f.replace(/\.json$/, ".pptx");
+      if (builtFrom(path.join(ROOT, out)) !== sourceHash(raw)) errors.push(`${out}: не собран или собран из старой версии — npm run sprint-deck -- ${f}`);
+      continue;
+    }
     const html = f.replace(/\.json$/, ".html");
     const embedded = fs.existsSync(path.join(ROOT, html)) && read(html).includes(JSON.stringify(deck).replaceAll("</", "<\\/"));
     if (!embedded) errors.push(`${html}: не собран или собран из старой версии — npm run slides -- ${f}`);

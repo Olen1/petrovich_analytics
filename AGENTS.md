@@ -12,33 +12,41 @@
 | Нейрослоп подробно, с подсказками | `npm run slop -- <файл>` | exit 1 — есть жёсткие маркеры |
 | Отрисовать Mermaid-диаграммы | `npm run render -- <файл>` | exit 2 — не проверено (нет браузера или сети) |
 | Собрать и проверить слайды | `npm run slides -- slides/<имя>.json` | вёрстка за краем, диаграммы, слоп |
+| Собрать отчёт по спринту (.pptx) | `npm run sprint-deck -- slides/sprint_<N>.json` | вёрстка за краем, схема, слоп |
 | Окружение и обвязка | `npm run doctor` | exit 0 / exit 1 |
 
 Перед тем как сказать «готово», `npm run check` должен пройти. «НЕ ПРОВЕРЕНО» — не «прошло»: скажите пользователю.
 
 ## Структура
 
-Новое: требования и спецификации — в `doc/`, исследования — в `doc/Analiz/`, слайды — `slides/<имя>.json`
+Новое: требования и спецификации — в `doc/`, исследования — в `doc/Analiz/`, слайды — `slides/<имя>.json`, отчёты по спринтам — `slides/sprint_<N>.json` → `.pptx`
 (HTML собирается командой, руками не правится). Имена латиницей. Добавили или удалили документ — обновите
 карту ниже в той же правке: `npm run check` сверяет её с папкой.
 
 | Документ | Что это |
 |---|---|
-| `doc/brd_petrovich_mvp_full.md` | **Главный BRD**, v1.2. Приоритеты — §4 и §8.1; Приложение А — детали без действующих приоритетов |
-| `doc/brd_mobile_mvp.md` | Краткий BRD мобильного MVP, v0.2 |
-| `doc/mobile_analytics_screens.md` | **Экраны MVP**, v0.4 — источник правды по экранам |
-| `doc/mobile_analytics.md` | Данные по экранам, v0.2 (отстаёт от экранов) |
+| `doc/brd_petrovich_mvp_full.md` | **Главный BRD**, v1.3. Приоритеты — §4 и §8.1; расхождения с кодом — §7.5; Приложение А — детали без действующих приоритетов |
+| `doc/brd_mobile_mvp.md` | Краткий BRD мобильного MVP, v0.3 (отстаёт от экранов и кода) |
+| `doc/mobile_analytics_screens.md` | **Экраны MVP**, v1.0 — источник правды по экранам, с состоянием реализации |
+| `doc/mobile_analytics.md` | Данные по экранам, v0.3 |
+| `doc/app_spec.md` | **Спецификация мобильного приложения**, v0.1: требования F-… с критериями приёмки, интеграции AutoGRAPH и стенда, расчёты, ошибки, НФТ с фактом из кода |
+| `doc/app_implementation.md` | **Что сделано в коде** `../petrovich`: приложение и стенд, v0.1 |
+| `doc/agent_questions_top50.md` | 50 частых вопросов владельца к Петровичу и ответит ли на них код, v0.1 |
+| `doc/Petrovich_ekrany_prilozheniya2.docx` | Описание экранов 3.1–3.17 (Word) — основа `mobile_analytics_screens.md` v1.0 |
 | `doc/analytics_draft.md` | Черновик аналитики: вопросы, допущения |
 | `doc/notes_product_architecture.md` | Продуктовые и архитектурные заметки, гипотезы |
-| `doc/mvp_description.md` | Описание реализованного веб-прототипа |
+| `doc/mvp_description.md` | Описание реализованного веб-прототипа (не мобильного приложения) |
 | `doc/concept_petrovich_v1_1.md` | Концепция заказчика v1.1 — текстовая копия оригинала |
 | `doc/otchet_analiz_telemetrii.md` | Разбор сырой телеметрии одной машины |
+| `doc/petrovich_changes.md` | Журнал изменений кода `../petrovich` по PR; ведёт `/petrovich-changes` |
 | `doc/Analiz/PV.md` | Ценностное предложение |
 | `doc/Analiz/Problem Space.md` | Проблемное пространство |
 | `doc/Analiz/User Segmentation.md` | Сегменты и роли |
 | `doc/Analiz/conkyrentnyy-analyz.md` | Конкурентный анализ |
 | `doc/Analiz/reserch.md` | Desk research |
 | `doc/Analiz/CJM_Petrovich_v2.md` | CJM владельца парка |
+| `doc/Analiz/hallway_testing.md` | План коридорного тестирования приложения: 5 участников, 9 заданий, протокол |
+| `doc/Analiz/hallway_testing_synthetic.md` | Синтетический прогон коридорного теста по коду (раунд 0): прогноз на вымышленных участниках, находки Н-1…Н-11 — не результаты теста с людьми |
 | `SKILL/make-bizness-treb/SKILL.md` | Шаблон-промпт BRD |
 
 Исходные материалы — только чтение (правки блокирует хук): `doc/autograph_api_reference.md` (справочник
