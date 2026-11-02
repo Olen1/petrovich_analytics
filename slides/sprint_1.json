@@ -2,7 +2,7 @@
   "title": "Петрович: итоги 1 спринта",
   "format": "pptx",
   "brand": "Петрович",
-  "sources": ["doc/brd_petrovich_mvp_full.md v1.3"],
+  "sources": ["doc/brd_petrovich_mvp_full.md v1.4"],
   "sprint": { "num": 1, "from": "389f527", "to": "551aaec", "dates": "2026-09-17 – 2026-10-08", "branches": "fleet/step-1…4 (07–08.10.2026), не влиты в main" },
   "slides": [
     {

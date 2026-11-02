@@ -3,8 +3,8 @@ _Статус: актуально на коммит 7aa8c04 | Версия: 0.1 
 
 Что на самом деле умеют Android-приложение и стенд из репозитория `../petrovich` на коммит `7aa8c04`
 (origin/main, 2026-10-09). Документ описывает факт, а не цель. Целевые экраны — `mobile_analytics_screens.md`
-v1.0, требования — `brd_petrovich_mvp_full.md` v1.3, расхождения с требованиями — BRD §7.5.
-История изменений кода — `petrovich_changes.md` v1.1.
+v1.0, требования — `brd_petrovich_mvp_full.md` v1.4, расхождения с требованиями — BRD §7.5.
+История изменений кода — `petrovich_changes.md` v1.2.
 
 Источники: код и `../petrovich/README.md`, описание экранов `Petrovich_ekrany_prilozheniya2.docx`
 (номера экранов 3.1–3.17 ниже — оттуда).

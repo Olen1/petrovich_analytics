@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { readZip, writeZip } from "../lib/zip.mjs";
-import { C, TONES } from "./layouts.mjs";
+import { C, TONES, SLIDE } from "./layouts.mjs";
 
 const EMU = 914400;
 const emu = (inch) => Math.round(inch * EMU);
@@ -58,17 +58,19 @@ const lineXml = (c, w = 12700) => (c ? `<a:ln w="${w}">${fillXml(c)}</a:ln>` : "
 const xfrm = (s) => `<a:xfrm><a:off x="${emu(s.x)}" y="${emu(s.y)}"/><a:ext cx="${emu(s.w)}" cy="${emu(s.h ?? 0)}"/></a:xfrm>`;
 const ALGN = { l: "l", ctr: "ctr", r: "r" };
 // Минимальная высота строки таблицы: PowerPoint не сжимает строку ниже неё, превью повторяет то же правило.
-const ROW_MIN = 0.3;
+const ROW_MIN = 0.25;
+const CELL_PAD = 54864; // поля ячейки, EMU (0,06″): мельче, чем в шаблоне, — таблицы отчёта длиннее
+const FONT = "Calibri";
 
-function runXml(r, size) {
-  return `<a:r><a:rPr lang="ru-RU" sz="${Math.round(size * 100)}" b="${r.b ? 1 : 0}" dirty="0">${fillXml(r.color)}<a:latin typeface="Arial"/><a:ea typeface="Arial"/><a:cs typeface="Arial"/></a:rPr><a:t>${esc(r.t)}</a:t></a:r>`;
+function runXml(r, size, spc) {
+  return `<a:r><a:rPr lang="ru-RU" sz="${Math.round(size * 100)}" b="${r.b ? 1 : 0}"${spc ? ` spc="${spc * 100}"` : ""} dirty="0">${fillXml(r.color)}<a:latin typeface="${FONT}"/><a:ea typeface="${FONT}"/><a:cs typeface="${FONT}"/></a:rPr><a:t>${esc(r.t)}</a:t></a:r>`;
 }
 function parasXml(sh) {
   return parseText(sh.text, sh).map((p) => {
     const bullet = sh.bullets ? `marL="171450" indent="-171450"` : `marL="0" indent="0"`;
-    const bu = sh.bullets ? `<a:buClr><a:srgbClr val="${sh.color}"/></a:buClr><a:buFont typeface="Arial"/><a:buChar char="•"/>` : "<a:buNone/>";
+    const bu = sh.bullets ? `<a:buClr><a:srgbClr val="${sh.color}"/></a:buClr><a:buFont typeface="${FONT}"/><a:buChar char="•"/>` : "<a:buNone/>";
     const gap = sh.gap ? `<a:spcAft><a:spcPts val="${sh.gap * 100}"/></a:spcAft>` : "";
-    return `<a:p><a:pPr ${bullet} algn="${ALGN[sh.align]}">${gap}${bu}</a:pPr>${p.runs.map((r) => runXml(r, p.size)).join("")}</a:p>`;
+    return `<a:p><a:pPr ${bullet} algn="${ALGN[sh.align]}">${gap}${bu}</a:pPr>${p.runs.map((r) => runXml(r, p.size, sh.spc)).join("")}</a:p>`;
   }).join("");
 }
 
@@ -88,14 +90,14 @@ function shapeXml(sh, id, rel) {
   }
   if (sh.k === "img") {
     const c = rel.crop;
-    return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${name}" descr="${esc(sh.alt || "")}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rel.id}"/><a:srcRect l="${c.l}" t="${c.t}" r="${c.r}" b="${c.b}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(sh)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+    return `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="${name}" descr="${esc(sh.alt || "")}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rel.id}"/><a:srcRect l="${c.l}" t="${c.t}" r="${c.r}" b="${c.b}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr>${xfrm(sh)}<a:prstGeom prst="${sh.geom === "ellipse" ? "ellipse" : "rect"}"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
   }
   if (sh.k === "table") {
     const border = ["lnL", "lnR", "lnT", "lnB"].map((t) => `<a:${t} w="9525">${fillXml(C.line)}</a:${t}>`).join("");
     const cell = (t, head) => {
       const plus = !head && /^[+−-]$/.test(t.trim());
-      const sh2 = { text: t, size: sh.size, bold: head || plus, color: plus ? (t.trim() === "+" ? C.green : C.red) : C.ink, align: "l" };
-      return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${parasXml(sh2)}</a:txBody><a:tcPr marL="82300" marR="82300" marT="82300" marB="82300" anchor="ctr">${border}${fillXml(C.card)}</a:tcPr></a:tc>`;
+      const sh2 = { text: t, size: sh.size, bold: head || plus, color: head ? C.white : plus ? (t.trim() === "+" ? C.green : C.red) : C.ink, align: "l" };
+      return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${parasXml(sh2)}</a:txBody><a:tcPr marL="${CELL_PAD}" marR="${CELL_PAD}" marT="${CELL_PAD}" marB="${CELL_PAD}" anchor="ctr">${border}${fillXml(head ? C.dark : C.white)}</a:tcPr></a:tc>`;
     };
     const rowXml = (r, head) => `<a:tr h="${emu(ROW_MIN)}">${r.map((t) => cell(String(t), head)).join("")}</a:tr>`;
     return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="${id}" name="${name}"/><p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
@@ -144,7 +146,7 @@ export function buildPptx({ slides, title, description, templatePath, root }) {
       }
       return shapeXml(sh, id++, rel);
     }).join("");
-    parts.push([`ppt/slides/slide${n}.xml`, slideXml(body, sl.bg || C.card)], [`ppt/slides/_rels/slide${n}.xml.rels`, rels(slideRels)],
+    parts.push([`ppt/slides/slide${n}.xml`, slideXml(body, sl.bg || C.white)], [`ppt/slides/_rels/slide${n}.xml.rels`, rels(slideRels)],
       [`ppt/notesSlides/notesSlide${n}.xml`, notesXml(sl.notes)],
       [`ppt/notesSlides/_rels/notesSlide${n}.xml.rels`, rels([["rId1", "notesMaster", "../notesMasters/notesMaster1.xml"], ["rId2", "slide", `../slides/slide${n}.xml`]])]);
   });
@@ -165,9 +167,13 @@ export function buildPptx({ slides, title, description, templatePath, root }) {
 
   // presentation.xml: стиль текста по умолчанию — из шаблона, список слайдов — свой.
   const presTpl = tpl.get("ppt/presentation.xml").toString("utf8");
+  // Раскладки посчитаны под размер слайда шаблона: другой размер — layouts.mjs нужно пересчитать.
+  const cx = emu(SLIDE.w), cy = emu(SLIDE.h);
+  const sz = (presTpl.match(/<p:sldSz[^>]*>/) || [""])[0], attr = (a) => +(sz.match(new RegExp(` ${a}="(\\d+)"`)) || [])[1];
+  if (attr("cx") !== cx || attr("cy") !== cy) throw new Error(`слайд шаблона ${attr("cx")}×${attr("cy")} EMU, раскладки — под ${cx}×${cy}`);
   const defaultText = (presTpl.match(/<p:defaultTextStyle>.*<\/p:defaultTextStyle>/s) || [""])[0];
   out.push(["ppt/presentation.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId4"/></p:sldMasterIdLst><p:notesMasterIdLst><p:notesMasterId r:id="rId5"/></p:notesMasterIdLst>`
-    + `<p:sldIdLst>${slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${6 + i}"/>`).join("")}</p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/>${defaultText}</p:presentation>`]);
+    + `<p:sldIdLst>${slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${6 + i}"/>`).join("")}</p:sldIdLst><p:sldSz cx="${cx}" cy="${cy}"/><p:notesSz cx="6858000" cy="9144000"/>${defaultText}</p:presentation>`]);
   out.push(["ppt/_rels/presentation.xml.rels", rels([["rId1", "theme", "theme/theme2.xml"], ["rId2", "presProps", "presProps.xml"], ["rId3", "tableStyles", "tableStyles.xml"],
     ["rId4", "slideMaster", "slideMasters/slideMaster1.xml"], ["rId5", "notesMaster", "notesMasters/notesMaster1.xml"],
     ...slides.map((_, i) => [`rId${6 + i}`, "slide", `slides/slide${i + 1}.xml`])])]);
@@ -186,7 +192,7 @@ const pt = (size) => +((size * 96) / 72).toFixed(2);
 const escH = (s) => esc(s).replace(/"/g, "&quot;");
 
 function textHtml(sh) {
-  return parseText(sh.text, sh).map((p) => `<p style="font-size:${pt(p.size)}px;margin:0 0 ${sh.gap ? pt(sh.gap) : 0}px${sh.bullets ? ";padding-left:14px;text-indent:-14px" : ""}">${sh.bullets ? "•&nbsp;&nbsp;" : ""}`
+  return parseText(sh.text, sh).map((p) => `<p style="font-size:${pt(p.size)}px;margin:0 0 ${sh.gap ? pt(sh.gap) : 0}px${sh.spc ? `;letter-spacing:${pt(sh.spc)}px` : ""}${sh.bullets ? ";padding-left:14px;text-indent:-14px" : ""}">${sh.bullets ? "•&nbsp;&nbsp;" : ""}`
     + p.runs.map((r) => `<span style="color:#${r.color};font-weight:${r.b ? 700 : 400}">${escH(r.t)}</span>`).join("") + "</p>").join("");
 }
 
@@ -203,12 +209,12 @@ function shapeHtml(sh, si, idx, root, htmlDir) {
   if (sh.k === "arrow") return `<div class="s a" style="left:${px(sh.x)}px;top:${px(sh.y) - 1}px;width:${px(sh.w)}px;--c:#${sh.color}"></div>`;
   if (sh.k === "img") {
     const src = path.relative(htmlDir, path.join(root, sh.src)).split(path.sep).join("/");
-    return `<img class="s" src="${escH(src)}" alt="${escH(sh.alt || "")}" style="${pos};object-fit:cover">`;
+    return `<img class="s" src="${escH(src)}" alt="${escH(sh.alt || "")}" style="${pos};object-fit:cover${sh.geom === "ellipse" ? ";border-radius:50%" : ""}">`;
   }
   if (sh.k === "table") {
     const cell = (t, tag) => {
       const plus = tag === "td" && /^[+−-]$/.test(String(t).trim());
-      const color = plus ? (String(t).trim() === "+" ? C.green : C.red) : C.ink;
+      const color = tag === "th" ? C.white : plus ? (String(t).trim() === "+" ? C.green : C.red) : C.ink;
       return `<${tag}>${textHtml({ text: t, size: sh.size, bold: tag === "th" || plus, color })}</${tag}>`;
     };
     return `<div class="s tb" data-slide="${si + 1}" data-i="${idx}" style="${pos}"><table style="width:${px(sh.w)}px"><colgroup>${sh.cols.map((w) => `<col style="width:${px(w)}px">`).join("")}</colgroup>`
@@ -219,15 +225,15 @@ function shapeHtml(sh, si, idx, root, htmlDir) {
 
 export function buildPreview({ slides, title, root, htmlFile }) {
   const htmlDir = path.dirname(htmlFile);
-  const body = slides.map((sl, si) => `<section class="slide" id="s${si + 1}" style="background:#${sl.bg || C.card}">${sl.shapes.map((sh, i) => shapeHtml(sh, si, i, root, htmlDir)).join("")}<span class="num">${si + 1}</span></section>`
+  const body = slides.map((sl, si) => `<section class="slide" id="s${si + 1}" style="background:#${sl.bg || C.white}">${sl.shapes.map((sh, i) => shapeHtml(sh, si, i, root, htmlDir)).join("")}<span class="num">${si + 1}</span></section>`
     + (sl.notes ? `<aside class="notes"><b>Заметки, слайд ${si + 1}.</b> ${escH(sl.notes)}</aside>` : "")).join("\n");
   return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${escH(title)} — превью</title><style>
-body{margin:0;background:#d6d7da;font-family:Arial,Helvetica,sans-serif;padding:24px 0}
-.slide{position:relative;width:1280px;height:720px;margin:0 auto 8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+body{margin:0;background:#d6d7da;font-family:${FONT},Carlito,sans-serif;padding:24px 0}
+.slide{position:relative;width:${px(SLIDE.w)}px;height:${px(SLIDE.h)}px;margin:0 auto 8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .s{position:absolute;box-sizing:border-box}.t{display:flex;flex-direction:column}.in{line-height:1.17}
 .a{height:2px;background:var(--c)}.a:after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:8px solid var(--c);border-right:0}
-table{border-collapse:collapse;table-layout:fixed;background:#fff}th,td{border:1px solid #${C.line};padding:8.6px;vertical-align:middle;text-align:left;line-height:1.17;height:${px(ROW_MIN)}px;box-sizing:border-box}
-.num{position:absolute;right:14px;bottom:6px;font-size:11px;color:#999}.notes{width:1240px;margin:0 auto 28px;font-size:13px;color:#444;line-height:1.4}
+table{border-collapse:collapse;table-layout:fixed;background:#fff}th{background:#${C.dark}}th,td{border:1px solid #${C.line};padding:${px(CELL_PAD / EMU)}px;vertical-align:middle;text-align:left;line-height:1.17;height:${px(ROW_MIN)}px;box-sizing:border-box}
+.num{position:absolute;right:14px;bottom:6px;font-size:11px;color:#999}.notes{width:${px(SLIDE.w) - 40}px;margin:0 auto 28px;font-size:13px;color:#444;line-height:1.4}
 .bad{outline:2px solid #e00;outline-offset:1px}#result{display:none}
 </style></head><body>${body}<pre id="result"></pre><script>
 // Текст за краем: содержимое выше или шире своей рамки. Впритык (>94 %) — предупреждение: PowerPoint верстает чуть иначе браузера.
@@ -240,6 +246,6 @@ for (const el of document.querySelectorAll(".t,.tb")) {
   if (h > box.height + 1 || w > box.width + 1) { over.push(where + " — нужно " + Math.round(h) + "px по высоте, есть " + Math.round(box.height)); el.classList.add("bad"); }
   else if (el.classList.contains("t") && box.height > 30 && h > box.height * 0.94) tight.push(where);
 }
-if (location.search.includes("check")) document.getElementById("result").textContent = "RESULT:" + JSON.stringify({ slides: ${slides.length}, overflow: over, tight, fonts: document.fonts.check("12px Arial") });
+if (location.search.includes("check")) document.getElementById("result").textContent = "RESULT:" + JSON.stringify({ slides: ${slides.length}, overflow: over, tight, fonts: document.fonts.check("12px ${FONT}") });
 </script></body></html>`;
 }

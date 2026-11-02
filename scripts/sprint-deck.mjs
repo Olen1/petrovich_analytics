@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Отчёт по спринту в .pptx по шаблону «Петрович_итоги_1_спринта_v11»: `npm run sprint-deck -- slides/sprint_<N>.json`
+// Отчёт по спринту в .pptx по шаблону «petrovich-sprint1-v2222»: `npm run sprint-deck -- slides/sprint_<N>.json`
 // → slides/sprint_<N>.pptx и slides/sprint_<N>.preview.html. Проверяет схему, нейрослоп, затем рендерит превью
 // в безголовом браузере: текст за краем рамки. exit 0 — прошло, exit 1 — ошибки, exit 2 — рендер проверить нельзя.
 // Флаг --no-render — только схема и текст (без браузера).
@@ -29,6 +29,7 @@ const SCHEMA = {
   progress: { need: ["title", "rows"], rows: [1, 7], stats: [0, 3], side: [0, 2] },
   screens: { need: ["title", "items"], items: [1, 5] },
   flow: { need: ["title", "client", "server", "external"], external: [1, 3] },
+  cards: { need: ["title", "items"], items: [1, 6] },
   team: { need: ["title", "members"], members: [1, 6] },
 };
 
@@ -123,7 +124,7 @@ if (isMain) {
     } else {
       r.overflow.forEach((p) => errors.push(`вёрстка: ${p}`));
       r.tight.forEach((p) => console.log(`ПРЕДУПРЕЖДЕНИЕ  впритык, в PowerPoint может не влезть: ${p}`));
-      if (!r.fonts) console.log("ПРЕДУПРЕЖДЕНИЕ  нет шрифта Arial — проверено на запасном шрифте");
+      if (!r.fonts) console.log("ПРЕДУПРЕЖДЕНИЕ  нет шрифта Calibri — проверено на запасном шрифте");
       console.log(`Рендер: слайдов ${r.slides}, текст за краем: ${r.overflow.length}, впритык: ${r.tight.length}`);
       if (errors.length) status = 1;
     }

@@ -9,7 +9,7 @@ _Статус: черновик | Версия: 0.1 | Дата: 2026-10-20_
 Список собран из источников ниже и упорядочен по предполагаемой частоте: ежедневные вопросы о состоянии парка —
 выше, редкие о деньгах и ТО — ниже. Проверяется после пилота по записанным формулировкам (§5).
 
-Источники: `brd_petrovich_mvp_full.md` v1.3 (B.2, §5), `brd_mobile_mvp.md` v0.3, `mobile_analytics_screens.md`
+Источники: `brd_petrovich_mvp_full.md` v1.4 (B.2, §5), `brd_mobile_mvp.md` v0.4, `mobile_analytics_screens.md`
 v1.0 (3.4, 3.6, 3.11), `CJM_Petrovich_v2.md` v2.0, `Problem Space.md` v1.0, `conkyrentnyy-analyz.md`,
 `app_implementation.md` v0.1; код `../petrovich`: `chat/ChatAgent.kt` (локальный Петрович) и
 `../petrovich/ml/fleet_service/README.md`, системный промпт и инструменты стенда.

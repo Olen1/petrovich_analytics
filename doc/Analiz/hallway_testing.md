@@ -5,8 +5,8 @@ _Статус: черновик | Версия: 0.2 | Дата: 2026-10-21_
 в демо-режиме. Тест проверяет, понятен ли интерфейс без подсказок, и закрывает гипотезу P-2 о правиле
 «10 секунд». Нужна ли продукту такая ценность — тест не покажет, это задача интервью с владельцами парков.
 
-Источники: `mobile_analytics_screens.md` v1.0 (экраны 3.1–3.17), `app_implementation.md` v0.1 (что сделано в
-коде), `brd_petrovich_mvp_full.md` v1.3 (§2.3 «10 секунд», риск R-7), `notes_product_architecture.md` v0.1
+Источники: `mobile_analytics_screens.md` v1.1 (экраны 3.1–3.17), `app_implementation.md` v0.1 (что сделано в
+коде), `brd_petrovich_mvp_full.md` v1.4 (§2.3 «10 секунд», риск R-7), `notes_product_architecture.md` v0.2
 (гипотеза P-2), `CJM_Petrovich_v2.md` v2.0.
 
 ---
